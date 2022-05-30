@@ -3,6 +3,12 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 export default function CoverImage({ title, coverImage, slug }) {
+console.log(coverImage);
+
+  if (coverImage === null) {
+    return null;
+  }
+
   const image = (
     <Image
       width={2000}
