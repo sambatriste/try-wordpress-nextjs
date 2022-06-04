@@ -7,9 +7,9 @@ import Layout from '../components/layout'
 import { getAllPostsForHome } from '../lib/api'
 import { CMS_NAME } from '../lib/constants'
 
-export default function Index({ allPosts: { edges }, preview }) {
-  const heroPost = edges[0]?.node
-  const morePosts = edges.slice(1)
+export default function Index({ allPosts, preview }) {
+  const heroPost = allPosts[0];
+  const morePosts = allPosts.slice(1)
 
   return (
     <Layout preview={preview}>
@@ -20,24 +20,42 @@ export default function Index({ allPosts: { edges }, preview }) {
         <Intro />
         {heroPost && (
           <HeroPost
-            title={heroPost.title}
+            title={heroPost.title.rendered}
             coverImage={heroPost.featuredImage}
             date={heroPost.date}
-            author={heroPost.author}
+            author={"著者"}
             slug={heroPost.slug}
-            excerpt={heroPost.excerpt}
+            excerpt={heroPost.excerpt.rendered}
           />
         )}
-        {morePosts.length > 0 && <MoreStories posts={morePosts} />}
+        {
+        morePosts.length > 0 && <MoreStories posts={morePosts} />
+        }
       </Container>
     </Layout>
   )
 }
 
 export async function getStaticProps({ preview = false }) {
-  const allPosts = await getAllPostsForHome(preview)
-
+  const allPosts = await getFintanBlog();
+  
   return {
-    props: { allPosts, preview },
+    props: { allPosts }
   }
+}
+
+async function getFintanBlog() {
+  const headers = { 'Content-Type': 'application/json' }
+
+  const res = await fetch("https://fintan.jp/wp-json/wp/v2/fintan_blog/", {
+    method: 'GET',
+    headers
+  });
+  const json = await res.json();
+  if (json.errors) {
+    console.error(json.errors)
+    throw new Error('Failed to fetch API')
+  }
+  
+  return json;
 }
