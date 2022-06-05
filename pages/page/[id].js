@@ -7,7 +7,7 @@ import Header from '../../components/header'
 import PostHeader from '../../components/post-header'
 import SectionSeparator from '../../components/section-separator'
 import Layout from '../../components/layout'
-import { getAllPostsWithSlug, getPostAndMorePosts } from '../../lib/api'
+//import { getAllPostsWithSlug, getPostAndMorePosts } from '../../lib/api'
 import PostTitle from '../../components/post-title'
 import Head from 'next/head'
 import { CMS_NAME } from '../../lib/constants'
@@ -32,28 +32,22 @@ export default function Post({ post, posts, preview }) {
             <article>
               <Head>
                 <title>
-                  {post.title} | Next.js Blog Example with {CMS_NAME}
+                  {post.title.rendered} | Next.js Blog Example with {CMS_NAME}
                 </title>
-                <meta
+                {/*
+                  <meta
                   property="og:image"
                   content={post.featuredImage?.sourceUrl}
                 />
+ */}
               </Head>
               <PostHeader
-                title={post.title}
-                coverImage={post.featuredImage}
+                title={post.title.rendered}
+                //coverImage={post.featuredImage}
                 date={post.date}
-                author={post.author}
-                categories={post.categories}
               />
-              <PostBody content={post.content} />
-              <footer>
-                {post.tags.edges.length > 0 && <Tags tags={post.tags} />}
-              </footer>
+              <PostBody content={post.content.rendered} />
             </article>
-
-            <SectionSeparator />
-            {morePosts.length > 0 && <MoreStories posts={morePosts} />}
           </>
         )}
       </Container>
@@ -62,22 +56,53 @@ export default function Post({ post, posts, preview }) {
 }
 
 export async function getStaticProps({ params, preview = false, previewData }) {
-  const data = await getPostAndMorePosts(params.slug, preview, previewData)
+  const data = await getPostAndMorePosts(params.id)
 
   return {
     props: {
       preview,
-      post: data.post,
-      posts: data.posts,
+      post: data
     },
   }
 }
 
 export async function getStaticPaths() {
-  const allPosts = await getAllPostsWithSlug()
+  const allPosts = await getAllPosts()
 
   return {
-    paths: allPosts.edges.map(({ node }) => `/posts/${node.slug}`) || [],
+    paths: allPosts.map((post) => `/page/${post.id}`) || [],
     fallback: true,
   }
+}
+
+async function getPostAndMorePosts(id) {
+  const headers = { 'Content-Type': 'application/json' }
+
+  const res = await fetch(`https://fintan.jp/wp-json/wp/v2/fintan_blog/${id}`, {
+    method: 'GET',
+    headers
+  });
+  const json = await res.json();
+  if (json.errors) {
+    console.error(json.errors)
+    throw new Error('Failed to fetch API')
+  }
+
+  return json;
+}
+
+async function getAllPosts() {
+  const headers = { 'Content-Type': 'application/json' }
+
+  const res = await fetch("https://fintan.jp/wp-json/wp/v2/fintan_blog/", {
+    method: 'GET',
+    headers
+  });
+  const json = await res.json();
+  if (json.errors) {
+    console.error(json.errors)
+    throw new Error('Failed to fetch API')
+  }
+
+  return json;
 }
